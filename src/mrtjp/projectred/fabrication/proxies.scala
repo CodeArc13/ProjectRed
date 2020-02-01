@@ -29,6 +29,7 @@ import net.minecraftforge.common.property.IExtendedBlockState
 import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.registry.ForgeRegistries
 import net.minecraftforge.fml.relauncher.{Side, SideOnly}
+import net.minecraft.client.renderer.ItemMeshDefinition
 
 class FabricationProxy_server extends IProxy with IPartFactory
 {
@@ -114,7 +115,9 @@ class FabricationProxy_client extends FabricationProxy_server
             val normalLoc = new ModelResourceLocation(regLoc, "normal")
             val wrappedLoc = new ModelResourceLocation(regLoc, "printer_wrapped")
             ModelLoader.setCustomStateMapper(icBlock, new Builder().ignore(MultiTileBlock.TILE_INDEX).build())
-            ModelLoader.setCustomMeshDefinition(Item.getItemFromBlock(icBlock), stack => if(stack.getMetadata == 1) wrappedLoc else normalLoc)
+            ModelLoader.setCustomMeshDefinition(Item.getItemFromBlock(icBlock), new ItemMeshDefinition {
+                def getModelLocation(stack: ItemStack) = if(stack.getMetadata == 1) wrappedLoc else normalLoc
+            })
             ModelRegistryHelper.register(normalLoc, model)
             ModelRegistryHelper.register(wrappedLoc, RenderICPrinterItem)
             TextureUtils.addIconRegister(icMachineBakery.registerKeyGens(icBlock))
@@ -151,7 +154,9 @@ class FabricationProxy_client extends FabricationProxy_server
     def registerModelType(item:Item, jsonLocation:String, names:Array[String], typeValue:ItemStack => String)
     {
         MCModelBakery.registerItemVariants(item, names.map { n => new ModelResourceLocation(jsonLocation, s"type=$n") }:_*)
-        ModelLoader.setCustomMeshDefinition(item, (s: ItemStack) => new ModelResourceLocation(jsonLocation, "type=" + typeValue(s)))
+        ModelLoader.setCustomMeshDefinition(item, new ItemMeshDefinition {
+            def getModelLocation(s: ItemStack) = new ModelResourceLocation(jsonLocation, "type=" + typeValue(s))
+        })
     }
 }
 

@@ -69,3 +69,4 @@ world-20140811-075700.zip
 
 gradle.properties
 *.launch
+.cache-main

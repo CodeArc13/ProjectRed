@@ -9,7 +9,7 @@ import net.minecraft.item.ItemStack
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.{FMLInitializationEvent, FMLPostInitializationEvent, FMLPreInitializationEvent}
 
-@Mod(modid = "projectred-relocation", useMetadata = true, modLanguage = "scala")
+@Mod(modid = "projectred-relocation", useMetadata = true, modLanguage = "scala", dependencies = "after:forgemultipartcbe")
 object ProjectRedRelocation
 {
     ProjectRedAPI.relocationAPI = APIImpl_Relocation
