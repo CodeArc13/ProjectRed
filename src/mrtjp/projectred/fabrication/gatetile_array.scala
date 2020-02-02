@@ -86,6 +86,7 @@ object ArrayGateTileLogic
         case defs.NullCell.ordinal => new NullCell(gate)
         case defs.InvertCell.ordinal => new InvertCell(gate)
         case defs.BufferCell.ordinal => new BufferCell(gate)
+        case defs.ANDCell.ordinal => new ANDCell(gate)
         case _ => throw new IllegalArgumentException("Invalid gate subID: "+subID)
     }
 }
@@ -125,7 +126,7 @@ abstract class ArrayGateTileLogicCrossing(gate:ArrayGateICTile) extends ArrayGat
 //            linker.getLogger.logWarning(Seq(gate.pos), "gate has no outputs")
     }
 
-    private def pullInput(mask:Int) = //Pull the input from the sim engine
+    protected def pullInput(mask:Int) = //Pull the input from the sim engine
     {
         var input = 0
         for (r <- 0 until 4) if ((mask&1<<r) != 0) {
@@ -134,7 +135,7 @@ abstract class ArrayGateTileLogicCrossing(gate:ArrayGateICTile) extends ArrayGat
         input
     }
 
-    private def pullOutput(mask:Int) = //Pull the output form the sim engine
+    protected def pullOutput(mask:Int) = //Pull the output form the sim engine
     {
         var output = 0
         for (r <- 0 until 4) if ((mask&1<<r) != 0) {
@@ -143,7 +144,7 @@ abstract class ArrayGateTileLogicCrossing(gate:ArrayGateICTile) extends ArrayGat
         output
     }
 
-    private def pullWireState(mask:Int) = //Pull the raw wire state from the sim engine
+    protected def pullWireState(mask:Int) = //Pull the raw wire state from the sim engine
     {
         var state = 0
         for (r <- 0 until 4) if ((mask&1<<r) != 0) {
@@ -243,119 +244,49 @@ class BufferCell(gate:ArrayGateICTile) extends LogicCell(gate)
     }
 }
 
-//abstract class ArrayGateTileLogic(gate:SequentialGateICTile) extends SequentialGateTileLogic(gate)
-//{
-//    override def outputMask(shape:Int):Int = 0xF
-//    override def inputMask(shape:Int):Int = 0xF
-//
-//    override def allocInternalRegisters(linker:ISELinker){}
-//
-//    def declareBidirectionalFlow(mask:Int, linker:ISELinker)
-//    {
-//        def createFlowLogic(fromR:Int, toR:Int)
-//        {
-//            val inputReg = inputRegs(fromR)
-//            val outputReg = outputRegs(toR)
-//
-//            val calculation = new ISEGate {
-//                override def compute(ic:SEIntegratedCircuit) {
-//                    ic.queueRegVal[Byte](outputReg, ic.getRegVal[Byte](inputReg))
-//                }
-//            }
-//
-//            val gateID = linker.allocateGateID(Set(gate.pos))
-//            linker.addGate(gateID, calculation, Seq(inputReg), Seq(outputReg))
-//        }
-//
-//        for (r0 <- 0 until 4) if ((mask&1<<r0) != 0)
-//            for (r1 <- 0 until 4) if (r1 != r0 && (mask&1<<r1) != 0) {
-//                createFlowLogic(r0, r1)
-//            }
-//    }
-//}
-//
-//class NullCell(gate:SequentialGateICTile) extends ArrayGateTileLogic(gate)
-//{
-//    override def declareOperations(gate:SequentialGateICTile, linker:ISELinker)
-//    {
-//        declareBidirectionalFlow(0x5, linker)
-//        declareBidirectionalFlow(0xA, linker)
-//    }
-//}
-//
-//class InvertCell(gate:SequentialGateICTile) extends ArrayGateTileLogic(gate)
-//{
-//    def declareConditionalFlow(mask:Int, linker:ISELinker)
-//    {
-//        def createFlowLogic(fromR:Int, toR:Int)
-//        {
-//            val inputReg = inputRegs(fromR)
-//            val outputReg = outputRegs(toR)
-//
-//            val conditionInputRegA = inputRegs(0)
-//            val conditionInputRegB = inputRegs(2)
-//
-//            val calculation = new ISEGate {
-//                override def compute(ic:SEIntegratedCircuit) {
-//                    def lowerWirePowered = ic.getRegVal[Byte](conditionInputRegA) != 0 || ic.getRegVal[Byte](conditionInputRegB) != 0
-//                    def cellPowerUp = !lowerWirePowered
-//
-//                    ic.queueRegVal[Byte](outputReg, if (cellPowerUp) 1 else ic.getRegVal[Byte](inputReg))
-//                }
-//            }
-//
-//            val gateID = linker.allocateGateID(Set(gate.pos))
-//            linker.addGate(gateID, calculation, Seq(inputReg, conditionInputRegA, conditionInputRegB), Seq(outputReg))
-//        }
-//
-//        for (r0 <- 0 until 4) if ((mask&1<<r0) != 0)
-//            for (r1 <- 0 until 4) if (r1 != r0 && (mask&1<<r1) != 0) {
-//                createFlowLogic(r0, r1)
-//            }
-//    }
-//
-//    override def declareOperations(gate:SequentialGateICTile, linker:ISELinker)
-//    {
-//        declareBidirectionalFlow(0x5, linker)
-//        declareConditionalFlow(0xA, linker)
-//    }
-//}
-//
-//class BufferCell(gate:SequentialGateICTile) extends ArrayGateTileLogic(gate)
-//{
-//    def declareConditionalFlow(mask:Int, linker:ISELinker)
-//    {
-//        def createFlowLogic(fromR:Int, toR:Int)
-//        {
-//            val inputReg = inputRegs(fromR)
-//            val outputReg = outputRegs(toR)
-//
-//            val conditionInputRegA = inputRegs(0)
-//            val conditionInputRegB = inputRegs(2)
-//
-//            val calculation = new ISEGate {
-//                override def compute(ic:SEIntegratedCircuit) {
-//                    def lowerWirePowered = ic.getRegVal[Byte](conditionInputRegA) != 0 || ic.getRegVal[Byte](conditionInputRegB) != 0
-//                    def cellPowerUp = lowerWirePowered
-//
-//                    ic.queueRegVal[Byte](outputReg, if (cellPowerUp) 1 else ic.getRegVal[Byte](inputReg))
-//                }
-//            }
-//
-//            val gateID = linker.allocateGateID(Set(gate.pos))
-//            linker.addGate(gateID, calculation, Seq(inputReg, conditionInputRegA, conditionInputRegB), Seq(outputReg))
-//        }
-//
-//        for (r0 <- 0 until 4) if ((mask&1<<r0) != 0)
-//            for (r1 <- 0 until 4) if (r1 != r0 && (mask&1<<r1) != 0) {
-//                createFlowLogic(r0, r1)
-//            }
-//    }
-//
-//    override def declareOperations(gate:SequentialGateICTile, linker:ISELinker)
-//    {
-//        declareBidirectionalFlow(0x5, linker)
-//        declareConditionalFlow(0xA, linker)
-//    }
-//
-//}
+abstract class ThroughLogicCell(gate:ArrayGateICTile) extends ArrayGateTileLogicCrossing(gate) with TArrayGateTileLogic[ArrayGateICTile]
+{
+    override def getPropMask(r:Int) = if (r%2 == 0) 0 else 0xA
+    
+    override def allocInternalRegisters(linker:ISELinker){}
+
+    override def inputMask(shape:Int) = 0xE
+    
+    override def outputMask(shape:Int) = 0x1
+    
+    override def pullIOStateFromSim()
+    {
+        val oldState = gate.state
+        val wireState = pullWireState(0xA)
+        var newState = pullInput(inputMask(gate.shape))&0xF | pullOutput(outputMask(gate.shape))<<4
+        newState |= wireState | wireState<<4
+
+        if (oldState != newState) {
+            gate.setState(newState)
+            gate.sendStateUpdate()
+        }
+    }
+}
+
+class ANDCell(gate:ArrayGateICTile) extends ThroughLogicCell(gate)
+{
+    
+    override def declareOperations(gate:ArrayGateICTile, linker:ISELinker)
+    {
+        val through = gate.getLogic[ThroughLogicCell]
+        
+        val wireInputs = Seq(through.inputRegs(1), through.inputRegs(3))
+        val dataInput = through.inputRegs(2)
+        val dataOutput = through.outputRegs(0)
+        
+        val logic = new ISEGate {
+            override def compute(ic:SEIntegratedCircuit) {
+                ic.queueRegVal[Byte](dataOutput, if (wireInputs.exists(ic.getRegVal(_) != 0)) ic.getRegVal(dataInput) else 0)
+            }
+        }
+        
+        linker.addGate(linker.allocateGateID(Set(gate.pos)), logic,
+            wireInputs++Seq(dataInput),
+            Seq(dataOutput))
+    }
+}

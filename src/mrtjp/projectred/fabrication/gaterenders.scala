@@ -44,7 +44,8 @@ object RenderGateTile
         new RenderDecRandomizer,
         new RenderNullCell,
         new RenderInvertCell,
-        new RenderBufferCell
+        new RenderBufferCell,
+        new RenderANDCell
     )
 
     def registerIcons(reg:TextureMap){}
@@ -968,6 +969,35 @@ class RenderBufferCell extends ICGateRenderer[ArrayGateICTile]
         torches(1).on = bottom.signal != 0
         wires(0).on = bottom.signal != 0
         wires(1).on = bottom.signal == 0
+    }
+}
+
+class RenderANDCell extends ICGateRenderer[ArrayGateICTile]
+{
+    val wires = generateWireModels("andcell", 2)
+    val torches = Seq(new RedstoneTorchModel(8, 2), new RedstoneTorchModel(8, 8), new RedstoneTorchModel(8, 13))
+    val top = new CellTopWireModel
+    
+    override val coreModels = Seq(new BaseComponentModel("andcell"))++wires++torches++Seq(new CellStandModel, top)
+    
+    override def prepareInv()
+    {
+        top.signal = 0
+        wires(0).on = false
+        wires(1).on = true
+        torches(0).on = false
+        torches(1).on = true
+        torches(2).on = true
+    }
+    
+    override def prepareDynamic(gate:ArrayGateICTile, frame:Float)
+    {
+        wires(0).on = (gate.state&0x4) != 0
+        torches(2).on = !wires(0).on
+        top.signal = (if ((gate.state&0xAA) != 0) 255 else 0).toByte
+        torches(1).on = top.signal == 0
+        wires(1).on = torches(1).on || torches(2).on
+        torches(0).on = !wires(1).on
     }
 }
 
