@@ -87,6 +87,7 @@ object ArrayGateTileLogic
         case defs.InvertCell.ordinal => new InvertCell(gate)
         case defs.BufferCell.ordinal => new BufferCell(gate)
         case defs.ANDCell.ordinal => new ANDCell(gate)
+        case defs.DataCell.ordinal => new DataCell(gate)
         case _ => throw new IllegalArgumentException("Invalid gate subID: "+subID)
     }
 }
@@ -290,3 +291,61 @@ class ANDCell(gate:ArrayGateICTile) extends ThroughLogicCell(gate)
             Seq(dataOutput))
     }
 }
+
+class DataCell(gate:ArrayGateICTile) extends ThroughLogicCell(gate)
+{
+    var stateReg = -1
+    
+    override def allocInternalRegisters(linker: ISELinker)
+    {
+        stateReg = linker.allocateRegisterID(Set(gate.pos))
+        linker.addRegister(stateReg, new StandardRegister[Byte](127))
+    }
+  
+    override def declareOperations(gate:ArrayGateICTile, linker:ISELinker)
+    {
+        val outreg = outputRegs(0)
+        val weregs = Seq(inputRegs(1), inputRegs(3))
+        val datreg = inputRegs(2)
+        
+        val register = new ISEGate {
+            override def compute(ic:SEIntegratedCircuit) {
+                def wren = weregs.exists(ic.getRegVal[Byte](_) != 0)
+                
+                def enterLockState() {
+                    ic.queueRegVal[Byte](stateReg, 0)
+                }
+
+                def enterWriteState() {
+                    ic.queueRegVal[Byte](stateReg, 1)
+                    writeData()
+                }
+
+                def writeData() {
+                    val data = ic.getRegVal[Byte](datreg)
+                    ic.queueRegVal[Byte](outreg, data)
+                }
+
+                ic.getRegVal[Byte](stateReg) match {
+                    case 0 => //lock state
+                        if (wren)
+                            enterWriteState()
+                    case 1 => //wr state
+                        if (wren)
+                            writeData()
+                        else
+                            enterLockState()
+                    case 127 => //initial state
+                        if (wren)
+                            enterWriteState()
+                        else
+                            enterLockState()
+                }
+            }
+        }
+        
+        val gateID = linker.allocateGateID(Set(gate.pos))
+        linker.addGate(gateID, register, Seq(datreg) ++ weregs, Seq(outreg, stateReg))
+    }
+}
+

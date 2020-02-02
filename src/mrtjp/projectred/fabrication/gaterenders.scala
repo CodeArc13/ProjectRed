@@ -45,7 +45,8 @@ object RenderGateTile
         new RenderNullCell,
         new RenderInvertCell,
         new RenderBufferCell,
-        new RenderANDCell
+        new RenderANDCell,
+        new RenderDataCell
     )
 
     def registerIcons(reg:TextureMap){}
@@ -998,6 +999,47 @@ class RenderANDCell extends ICGateRenderer[ArrayGateICTile]
         torches(1).on = top.signal == 0
         wires(1).on = torches(1).on || torches(2).on
         torches(0).on = !wires(1).on
+    }
+}
+
+class RenderDataCell extends ICGateRenderer[ArrayGateICTile]
+{
+    val wires = generateWireModels("datacell", 5)
+    val torches = Seq(new RedstoneTorchModel(8, 12), new RedstoneTorchModel(12.5, 12), new RedstoneTorchModel(8, 8),
+        new RedstoneTorchModel(8, 2))
+    val top = new DataCellTopWireModel
+        
+    override val coreModels = Seq(new BaseComponentModel("datacell"))++wires++torches++Seq(new DataCellStandModel, top)
+        
+    override def prepareInv()
+    {
+        top.signal = 0
+        wires(0).on = true
+        wires(1).on = false
+        wires(2).on = true
+        wires(3).on = false
+        wires(4).on = false
+        torches(0).on = false
+        torches(1).on = true
+        torches(2).on = true
+        torches(3).on = false
+    }
+    
+    override def prepareDynamic(gate:ArrayGateICTile, frame:Float)
+    {
+        val haswe = (gate.state&0xAA) != 0;
+        val hasout = (gate.state&0x10) != 0
+        val hasdat = (gate.state&0x4) != 0
+        top.signal = (if (haswe) 255 else 0).toByte
+        wires(0).on = !hasout
+        wires(1).on = haswe
+        wires(2).on = !haswe
+        wires(3).on = hasout
+        wires(4).on = hasdat
+        torches(0).on = !(!haswe || hasdat)
+        torches(1).on = !haswe
+        torches(2).on = !(hasout || haswe)
+        torches(3).on = hasout
     }
 }
 

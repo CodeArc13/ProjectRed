@@ -268,6 +268,7 @@ object ICGateDefinition extends Enum
     val InvertCell = ICGateDef("Invert Cell", ICTileDefs.ArrayGate.id, gd.InvertCell)
     val BufferCell = ICGateDef("Buffer Cell", ICTileDefs.ArrayGate.id, gd.BufferCell)
     val ANDCell = ICGateDef("AND Cell", ICTileDefs.ArrayGate.id, gd.ANDCell)
+    val DataCell = ICGateDef("Data Cell", ICTileDefs.ArrayGate.id, gd.StackingLatch)
 
     case class ICGateDef(unlocal:String, gateType:Int, intDef:GateDef = null) extends Value
     {

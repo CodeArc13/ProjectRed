@@ -56,9 +56,11 @@ object ICComponentStore
     var pointerIcon:TextureAtlasSprite = _
 
     var cellStandIcon:TextureAtlasSprite = _
+    var dataCellStandIcon:TextureAtlasSprite = _
     var nullCellWireBottomIcon:TextureAtlasSprite = _
     var nullCellWireTopIcon:TextureAtlasSprite = _
     var invertCellWireBottomIcon:TextureAtlasSprite = _
+    var dataCellWireTopIcon:TextureAtlasSprite = _
 
     def registerIcons(reg:TextureMap)
     {
@@ -96,9 +98,11 @@ object ICComponentStore
         pointerIcon = register("pointer")
 
         cellStandIcon = register("cell_stand")
+        dataCellStandIcon = register("data_cell_stand")
         nullCellWireBottomIcon = register("bottom_null_cell_wire")
         nullCellWireTopIcon = register("top_null_cell_wire")
         invertCellWireBottomIcon = register("bottom_invert_cell_wire")
+        dataCellWireTopIcon = register("top_data_cell_wire")
     }
 
     def prepairRender(ccrs:CCRenderState)
@@ -271,6 +275,11 @@ class CellStandModel extends CenteredSingleComponentModel
     override def getUVT = new IconTransformation(cellStandIcon)
 }
 
+class DataCellStandModel extends CenteredSingleComponentModel
+{
+    override def getUVT = new IconTransformation(dataCellStandIcon)
+}
+
 abstract class CellWireModel extends ICComponentModel
 {
     var signal:Byte = 0
@@ -301,4 +310,9 @@ class NullCellBottomWireModel extends CellWireModel
 class InvertCellBottomWireModel extends CellWireModel
 {
     override def getUVT = new IconTransformation(invertCellWireBottomIcon)
+}
+
+class DataCellTopWireModel extends CellWireModel
+{
+    override def getUVT = new IconTransformation(dataCellWireTopIcon)
 }
