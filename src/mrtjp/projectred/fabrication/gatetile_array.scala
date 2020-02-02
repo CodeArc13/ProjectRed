@@ -84,8 +84,8 @@ object ArrayGateTileLogic
     def create(gate:ArrayGateICTile, subID:Int):ArrayGateTileLogic = subID match
     {
         case defs.NullCell.ordinal => new NullCell(gate)
-//        case defs.InvertCell.ordinal => new InvertCell(gate)
-//        case defs.BufferCell.ordinal => new BufferCell(gate)
+        case defs.InvertCell.ordinal => new InvertCell(gate)
+        case defs.BufferCell.ordinal => new BufferCell(gate)
         case _ => throw new IllegalArgumentException("Invalid gate subID: "+subID)
     }
 }
@@ -184,6 +184,63 @@ class NullCell(gate:ArrayGateICTile) extends ArrayGateTileLogicCrossing(gate)
     override def allocInternalRegisters(linker:ISELinker){}
 
     override def declareOperations(gate:ArrayGateICTile, linker:ISELinker){}
+}
+
+// Crossing array gate with logic
+abstract class LogicCell(gate:ArrayGateICTile) extends NullCell(gate)
+{
+    /* For reference:
+     *   Bit 0 - North 
+     *   Bit 1 - East
+     *   Bit 2 - South 
+     *   Bit 3 - West
+     */
+    override def outputMask(shape:Int) = 0xA
+    override def inputMask(shape:Int) = 0x5
+    
+    def getLogicOp(inputs:Array[Int], outputs:Array[Int]):ISEGate
+    
+    override def declareOperations(gate:ArrayGateICTile, linker:ISELinker)
+    {
+        val crossing = gate.getLogic[ArrayGateTileLogicCrossing]
+      
+        val logic = getLogicOp(crossing.inputRegs, crossing.outputRegs)
+        linker.addGate(linker.allocateGateID(Set(gate.pos)), logic,
+            crossing.inputRegs.filter(_ != -1),
+            crossing.outputRegs.filter(_ != -1))
+    }
+}
+
+class InvertCell(gate:ArrayGateICTile) extends LogicCell(gate)
+{
+    override def getLogicOp(inputs:Array[Int], outputs:Array[Int]):ISEGate =
+    {
+        val inIDs = Seq(inputs(0), inputs(2))
+        val outIDs = Seq(outputs(1), outputs(3))
+        
+        new ISEGate {
+            override def compute(ic:SEIntegratedCircuit) {
+                val outVal = (if (inIDs.exists(ic.getRegVal(_) != 0)) 0 else 1).toByte
+                outIDs.foreach(ic.queueRegVal[Byte](_, outVal))
+            }
+        }
+    }
+}
+
+class BufferCell(gate:ArrayGateICTile) extends LogicCell(gate)
+{
+    override def getLogicOp(inputs:Array[Int], outputs:Array[Int]):ISEGate =
+    {
+        val inIDs = Seq(inputs(0), inputs(2))
+        val outIDs = Seq(outputs(1), outputs(3))
+        
+        new ISEGate {
+            override def compute(ic:SEIntegratedCircuit) {
+                val outVal = (if (inIDs.exists(ic.getRegVal(_) != 0)) 1 else 0).toByte
+                outIDs.foreach(ic.queueRegVal[Byte](_, outVal))
+            }
+        }
+    }
 }
 
 //abstract class ArrayGateTileLogic(gate:SequentialGateICTile) extends SequentialGateTileLogic(gate)

@@ -172,7 +172,7 @@ private class WireNetChannel
         }
     }
 
-    def getInputRegID(p:Point, r:Int) = inputsToRegIDMap((p, r))
+    def getInputRegID(p:Point, r:Int) = inputsToRegIDMap.getOrElse((p, r), REG_ZERO)
 
     def getOutputRegID = outputRegID
 
