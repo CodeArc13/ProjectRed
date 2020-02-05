@@ -247,7 +247,7 @@ class BufferCell(gate:ArrayGateICTile) extends LogicCell(gate)
 
 abstract class ThroughLogicCell(gate:ArrayGateICTile) extends ArrayGateTileLogicCrossing(gate) with TArrayGateTileLogic[ArrayGateICTile]
 {
-    override def getPropMask(r:Int) = if (r%2 == 0) 0 else 0xA
+    override def getPropMask(r:Int) = if (r%2 == gate.orientation%2) 0 else (if (gate.orientation%2 == 0) 0xA else 0x5)
     
     override def allocInternalRegisters(linker:ISELinker){}
 
@@ -258,7 +258,7 @@ abstract class ThroughLogicCell(gate:ArrayGateICTile) extends ArrayGateTileLogic
     override def pullIOStateFromSim()
     {
         val oldState = gate.state
-        val wireState = pullWireState(0xA)
+        val wireState = pullWireState(if (gate.orientation%2 == 0) 0xA else 0x5)
         var newState = pullInput(inputMask(gate.shape))&0xF | pullOutput(outputMask(gate.shape))<<4
         newState |= wireState | wireState<<4
 
